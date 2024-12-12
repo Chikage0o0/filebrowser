@@ -1,6 +1,6 @@
 FROM node:21 AS node_build
 WORKDIR /go/src/github.com/filebrowser/
-ENV VERSION=v2.31.0
+ENV VERSION=v2.31.2
 RUN git clone --depth=1 https://github.com/filebrowser/filebrowser.git  -b ${VERSION}  filebrowser
 WORKDIR /go/src/github.com/filebrowser/filebrowser/
 RUN cd frontend && npm install -g pnpm && pnpm install && pnpm run build
