@@ -1,6 +1,6 @@
 FROM node:18 AS node_build
 WORKDIR /go/src/github.com/filebrowser/
-ENV VERSION=v2.31.2
+ENV VERSION=v2.31.0
 RUN git clone --depth=1 https://github.com/filebrowser/filebrowser.git  -b ${VERSION}  filebrowser
 WORKDIR /go/src/github.com/filebrowser/filebrowser/
 RUN cd frontend && npm ci && npm run build
@@ -11,8 +11,9 @@ WORKDIR /go/src/github.com/filebrowser/filebrowser/
 COPY --from=node_build /go/src/github.com/filebrowser/filebrowser/ /go/src/github.com/filebrowser/filebrowser/
 ENV GO111MODULE=on
 ENV CGO_ENABLED=1
-RUN apk add --no-cache gcc musl-dev make bash && \
-    make build-backend && \
+RUN apk add --no-cache gcc musl-dev bash && \
+    MODULE=$(go list -m) VERSION=$(git describe --tags 2>/dev/null || git rev-parse --abbrev-ref HEAD) VERSION_HASH=$(git rev-parse HEAD) && \
+    go build -ldflags "-X \"${MODULE}/version.Version=${VERSION}\" -X \"${MODULE}/version.CommitSHA=${VERSION_HASH}\"" -o . && \
     mkdir /opt/filebrowser/ && \
     mv /go/src/github.com/filebrowser/filebrowser/filebrowser /opt/filebrowser/ 
 
