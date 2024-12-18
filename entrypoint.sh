@@ -1,11 +1,11 @@
 #!/bin/sh
 
-if [ -z "${PGID}" ]; then
-    PGID="`id -g filebrowser`"
-fi
-
 if [ -z "${PUID}" ]; then
     PUID="`id -u filebrowser`"
+fi
+
+if [ -z "${PGID}" ]; then
+    PGID="`id -g filebrowser`"
 fi
 
 if [ -z "${UMASK}" ]; then
@@ -33,6 +33,11 @@ echo "CONFIG_SPACE = ${CONFIG_SPACE}"
 echo "PORT = ${PORT}"
 echo "==============================================="
 
+# 更新用户UID?
+if [ -n "${PUID}" ] && [ "${PUID}" != "`id -u filebrowser`" ]; then
+    echo "更新用户UID..."
+    sed -i -e "s/^filebrowser:\([^:]*\):[0-9]*:\([0-9]*\)/filebrowser:\1:${PUID}:\2/" /etc/passwd
+fi
 
 # 更新用户GID?
 if [ -n "${PGID}" ] && [ "${PGID}" != "`id -g filebrowser`" ]; then
@@ -41,24 +46,11 @@ if [ -n "${PGID}" ] && [ "${PGID}" != "`id -g filebrowser`" ]; then
     sed -i -e "s/^filebrowser:\([^:]*\):\([0-9]*\):[0-9]*/filebrowser:\1:\2:${PGID}/" /etc/passwd
 fi
 
-# 更新用户UID?
-if [ -n "${PUID}" ] && [ "${PUID}" != "`id -u filebrowser`" ]; then
-    echo "更新用户UID..."
-    sed -i -e "s/^filebrowser:\([^:]*\):[0-9]*:\([0-9]*\)/filebrowser:\1:${PUID}:\2/" /etc/passwd
-fi
-
 # 更新umask?
 if [ -n "${UMASK}" ]; then
     echo "更新umask..."
     umask ${UMASK}
 fi
-
-# 创建工作空间
-if [ ! -d "${WORK_SPACE}" ];then
-    echo "生成工作空间目录 ${WORK_SPACE} ..."
-    mkdir -p ${WORK_SPACE}
-fi
-chown -R filebrowser:filebrowser ${WORK_SPACE};
 
 # 创建配置文件目录
 if [ ! -d "${CONFIG_SPACE}" ];then
@@ -66,7 +58,6 @@ if [ ! -d "${CONFIG_SPACE}" ];then
     mkdir -p ${CONFIG_SPACE}
 fi
 chown -R filebrowser:filebrowser ${CONFIG_SPACE};
-
 
 # 启动filebrowser
 echo "启动filebrowser..."
