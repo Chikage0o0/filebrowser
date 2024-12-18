@@ -7,13 +7,16 @@ RUN cd frontend && npm ci && npm run build
 
 
 FROM golang:alpine AS go_build
-WORKDIR /go/src/github.com/filebrowser/filebrowser/
+
 COPY --from=node_build /go/src/github.com/filebrowser/filebrowser/ /go/src/github.com/filebrowser/filebrowser/
 ENV GO111MODULE=on
 ENV CGO_ENABLED=1
-RUN apk add --no-cache gcc musl-dev git bash && \
-    MODULE=$(go list -m) VERSION=$(git describe --tags 2>/dev/null || git rev-parse --abbrev-ref HEAD) VERSION_HASH=$(git rev-parse HEAD) && \
-    go build -ldflags "-X \"${MODULE}/version.Version=${VERSION}\" -X \"${MODULE}/version.CommitSHA=${VERSION_HASH}\"" -o . && \
+RUN apk add --no-cache gcc musl-dev git bash
+COPY ./patches /patches
+WORKDIR /go/src/github.com/filebrowser/filebrowser/
+RUN git apply /patches/*.patch
+RUN MODULE=$(go list -m) VERSION=$(git describe --tags 2>/dev/null || git rev-parse --abbrev-ref HEAD) VERSION_HASH=$(git rev-parse HEAD) && \
+    go build -ldflags "-s -w -X \"${MODULE}/version.Version=${VERSION}\" -X \"${MODULE}/version.CommitSHA=${VERSION_HASH}\"" -o . && \
     mkdir /opt/filebrowser/ && \
     mv /go/src/github.com/filebrowser/filebrowser/filebrowser /opt/filebrowser/ 
 
